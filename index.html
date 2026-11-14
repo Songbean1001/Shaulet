@@ -25,9 +25,13 @@ textarea,input{-webkit-user-select:text;user-select:text}
 .t1{font-size:calc(1.875rem*var(--fz,1));line-height:1.25}
 .t2{font-size:calc(1.5rem*var(--fz,1));line-height:1.3}
 .t3{font-size:calc(.875rem*var(--fz,1));line-height:1.4}
+mark.hl{background:linear-gradient(transparent 38%,rgba(250,204,21,.6) 38%);color:inherit;padding:0 .12em;border-radius:.15em}
+@keyframes sh{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.sh{animation:sh .3s}
+.gn{opacity:0;transform:scale(.85);pointer-events:none;transition:opacity .3s,transform .3s}
 </style>
 <style type="text/tailwindcss">
-.btn{@apply rounded-2xl px-4 py-3 font-semibold bg-indigo-600 text-white active:scale-95 transition}
+.btn{@apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 font-semibold bg-indigo-600 text-white active:scale-95 transition}
 .bg2{@apply bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-100}
 .cd{@apply rounded-2xl bg-white dark:bg-slate-900 shadow-sm p-4}
 .inp{@apply w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-3 text-base outline-none focus:border-indigo-500}
@@ -36,9 +40,9 @@ textarea,input{-webkit-user-select:text;user-select:text}
 <body class="flex flex-col bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
 <header class="shrink-0 bg-indigo-600 text-white" style="padding-top:env(safe-area-inset-top)">
   <div class="h-12 px-4 flex items-center justify-between">
-    <button id="bk" class="w-16 text-left text-lg" onclick="back()">‹ 返回</button>
+    <button id="bk" class="w-20 flex items-center text-lg" onclick="back()"></button>
     <h1 id="tt" class="font-bold text-lg truncate">Shaulet</h1>
-    <button id="ra" class="w-16 text-right text-xl" onclick="settings()">⚙️</button>
+    <button id="ra" class="w-20 flex justify-end" onclick="settings()"></button>
   </div>
 </header>
 <main id="app" class="flex-1 overflow-y-auto" style="padding-bottom:env(safe-area-inset-bottom)"></main>
@@ -49,10 +53,29 @@ textarea,input{-webkit-user-select:text;user-select:text}
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pl=s=>String(s??'').replace(/\*\*(.+?)\*\*/g,'$1'),hl=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<mark class="hl">$1</mark>');
 const shuf=a=>{a=[...a];for(let i=a.length;i>1;){const j=Math.random()*i--|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const LANGS={'en-US':'英文','ja-JP':'日文','ko-KR':'韓文','zh-TW':'中文'};
 const LO=l=>Object.entries(LANGS).map(([k,v])=>`<option value="${k}" ${k===l?'selected':''}>${v}</option>`).join('');
-const KEY='shaulet.v1', DOT=['⚪','🔴','🟡','🟢'];
+const KEY='shaulet.v1';
+const IC={
+spk:'<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/>',
+cog:'<path d="M3 6h9M18 6h3M3 12h3M12 12h9M3 18h11M20 18h1"/><circle cx="15" cy="6" r="3"/><circle cx="9" cy="12" r="3"/><circle cx="17" cy="18" r="3"/>',
+lf:'<path d="m15 18-6-6 6-6"/>',rg:'<path d="m9 18 6-6-6-6"/>',pl:'<path d="M12 5v14M5 12h14"/>',
+tr:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6"/>',
+edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+up:'<path d="M12 15V3M7 8l5-5 5 5M5 21h14"/>',dn:'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+clip:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+rs:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+st:'<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3-6.2 3.3L7 14.2 2 9.3l6.9-1z"/>',
+cards:'<rect x="3" y="6" width="14" height="14" rx="2"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/>',
+chk:'<path d="M20 6 9 17l-5-5"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',
+cap:'<path d="M12 3 2 9l10 6 10-6z"/><path d="M6 12v5c3 2.5 9 2.5 12 0v-5"/>',
+grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+tro:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+tm:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>',
+hp:'<path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M3 14h3v6H4a1 1 0 0 1-1-1zM21 14h-3v6h2a1 1 0 0 0 1-1z"/>'};
+const ic=(n,c='w-5 h-5',f)=>`<svg class="${c} inline-block shrink-0" viewBox="0 0 24 24" fill="${f?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
 
 /* ---------- 資料 ---------- */
 const demo=()=>({decks:[{id:uid(),name:'Shaulet 體驗單字集',lang:'en-US',cards:[
@@ -67,10 +90,10 @@ if(!S||!Array.isArray(S.decks))S=demo();
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch{toast('儲存失敗，請檢查儲存空間')}};
 save();
 
-let V={p:'home'}, HARD=false;
+let V={p:'home'}, HARD=false, STAR=false, MT=0;
 
 /* ---------- 偏好設定（獨立儲存，不影響備份資料結構） ---------- */
-let P={snd:1,fs:0};try{Object.assign(P,JSON.parse(localStorage.getItem('shaulet.pref')))}catch{}
+let P={snd:1,fs:0,af:1,ab:0,bl:'zh-TW',sm:'cn'};try{Object.assign(P,JSON.parse(localStorage.getItem('shaulet.pref')))}catch{}
 const savep=()=>{try{localStorage.setItem('shaulet.pref',JSON.stringify(P))}catch{}};
 const applyFs=()=>document.documentElement.style.setProperty('--fz',[1,1.25,1.55][P.fs]||1);
 applyFs();
@@ -94,15 +117,15 @@ const SFX={
 };
 const snd=n=>{if(P.snd)try{SFX[n]()}catch{}};
 const D=()=>S.decks.find(d=>d.id===V.d);
-const cc=()=>D().cards.find(x=>x.id===(V.q||V.l)[V.i]);
+const cc=()=>D().cards.find(x=>x.id===(V.cid||(V.q||V.l)[V.i]));
 const nav=(p,o={})=>{V={d:V.d,p,...o};render()};
 const openDeck=id=>nav('deck',{d:id});
 function back(){window.speechSynthesis&&speechSynthesis.cancel();nav(V.p==='deck'?'home':'deck')}
 function toast(m){const t=$('#ts');t.textContent=m;t.classList.remove('opacity-0');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.add('opacity-0'),2200)}
 
 /* ---------- 語音 ---------- */
-function speak(t,l){if(!window.speechSynthesis)return toast('此瀏覽器不支援語音朗讀');speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=l;u.rate=.9;speechSynthesis.speak(u)}
-const say=()=>speak(cc().f,D().lang);
+function speak(t,l){if(!window.speechSynthesis)return toast('此瀏覽器不支援語音朗讀');speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(pl(t));u.lang=l;u.rate=.9;speechSynthesis.speak(u)}
+const say=()=>speak(cc().f,D().lang),sayB=()=>speak(cc().b,P.bl),stopSp=()=>window.speechSynthesis&&speechSynthesis.cancel();
 
 /* ---------- 畫面 ---------- */
 function render(keep){
@@ -110,8 +133,9 @@ function render(keep){
   $('#tt').textContent=p==='home'||!d?'Shaulet':d.name;
   $('#bk').classList.toggle('invisible',p==='home');
   
-  $('#app').innerHTML=({home,deck,study,quiz})[p]();
-  if(!keep)$('#app').scrollTop=0;
+  clearInterval(MT);if(!keep)stopSp();
+  $('#app').innerHTML=({home,deck,study,quiz,learn,spell,match})[p]();
+  if(!keep){$('#app').scrollTop=0;auto()}
 }
 
 function home(){
@@ -125,91 +149,186 @@ function home(){
       <div class="text-xs text-slate-500 mt-1">已掌握 ${m} / ${n}</div></div>`}).join('')
     :`<p class="text-center text-slate-500 py-20">還沒有單字集，點下方按鈕建立第一個吧！</p>`;
   return `<div class="p-4 pb-28 space-y-3">${list}</div>
-  <button class="btn fixed right-5 shadow-lg" style="bottom:calc(env(safe-area-inset-bottom) + 1.25rem)" onclick="deckForm()">＋ 新增單字集</button>`;
+  <button class="btn fixed right-5 shadow-lg" style="bottom:calc(env(safe-area-inset-bottom) + 1.25rem)" onclick="deckForm()">${ic('pl')} 新增單字集</button>`;
 }
 
 function deck(){
   const d=D(),c=[0,0,0,0];d.cards.forEach(x=>c[x.s]++);
+  const nst=d.cards.filter(x=>x.st).length;
+  const mb=(f,i,t,x='')=>`<button class="btn ${x}" onclick="${f}">${ic(i)}${t}</button>`;
+  const ck=(k,t,v)=>`<label class="flex items-center justify-between mt-3"><span>${t}</span><input type="checkbox" class="w-6 h-6 accent-indigo-600" ${v?'checked':''} onchange="${k}=this.checked"></label>`;
   return `<div class="p-4 space-y-3">
   <div class="cd">
-    <div class="text-sm text-slate-500 mb-3">共 ${d.cards.length} 張｜未學 ${c[0]}｜不熟 ${c[1]}｜普通 ${c[2]}｜已掌握 ${c[3]}</div>
-    <div class="grid grid-cols-2 gap-3"><button class="btn" onclick="startStudy()">📖 翻卡學習</button><button class="btn" onclick="startQuiz()">✅ 選擇題測驗</button></div>
-    <label class="flex items-center justify-between mt-4"><span>只複習不熟的卡片（含未學）</span>
-    <input type="checkbox" class="w-6 h-6 accent-indigo-600" ${HARD?'checked':''} onchange="HARD=this.checked"></label>
+    <div class="text-sm text-slate-500 mb-3">共 ${d.cards.length} 張｜星號 ${nst}｜未學 ${c[0]}｜不熟 ${c[1]}｜普通 ${c[2]}｜已掌握 ${c[3]}${d.best?`｜配對最佳 ${d.best.toFixed(1)} 秒`:''}</div>
+    <div class="grid grid-cols-2 gap-3">${mb('startLearn()','cap','智慧學習','col-span-2')}${mb('startStudy()','cards','翻卡學習')}${mb('startQuiz()','chk','選擇題測驗')}${mb('startSpell()','edit','拼寫／聽寫')}${mb('startMatch()','grid','配對遊戲')}</div>
+    ${ck('STAR','只練習星號單字（所有模式）',STAR)}${ck('HARD','翻卡只複習不熟的卡片（含未學）',HARD)}
   </div>
-  <div class="grid grid-cols-2 gap-2 text-sm">
-    <button class="btn bg2" onclick="cardForm()">＋ 新增卡片</button><button class="btn bg2" onclick="importForm()">📋 批次匯入</button>
-    <button class="btn bg2" onclick="deckForm(1)">✏️ 編輯單字集</button><button class="btn bg2" onclick="resetProg()">🔄 重設進度</button>
-  </div>
-  <button class="btn bg2 w-full text-sm !text-red-500" onclick="delDeck()">🗑 刪除此單字集</button>
+  <div class="grid grid-cols-2 gap-2 text-sm">${mb('cardForm()','pl','新增卡片','bg2')}${mb('importForm()','clip','批次匯入','bg2')}${mb('deckForm(1)','edit','編輯單字集','bg2')}${mb('resetProg()','rs','重設進度','bg2')}</div>
+  <button class="btn bg2 w-full text-sm !text-red-500" onclick="delDeck()">${ic('tr')}刪除此單字集</button>
   <div class="space-y-2 pt-1">${d.cards.length?d.cards.map(x=>`<div class="cd flex items-center gap-3 !py-3">
-    <span>${DOT[x.s]}</span>
-    <div class="flex-1 min-w-0" onclick="cardForm('${x.id}')"><div class="font-semibold truncate">${esc(x.f)}</div><div class="text-sm text-slate-500 truncate">${esc(x.b)}</div></div>
-    <button class="px-2 text-lg" onclick="delCard('${x.id}')">🗑</button></div>`).join(''):'<p class="text-center text-slate-500 py-6">這個單字集還沒有卡片</p>'}</div></div>`;
+    <span class="w-2.5 h-2.5 rounded-full shrink-0 ${['bg-slate-300','bg-red-500','bg-amber-400','bg-emerald-500'][x.s]}"></span>
+    <div class="flex-1 min-w-0" onclick="cardForm('${x.id}')"><div class="font-semibold truncate">${hl(x.f)}</div><div class="text-sm text-slate-500 truncate">${hl(x.b)}</div></div>
+    <button class="p-2 ${x.st?'text-amber-500':'text-slate-400'}" onclick="star('${x.id}')">${ic('st','w-5 h-5',x.st)}</button>
+    <button class="p-2 text-slate-400" onclick="delCard('${x.id}')">${ic('tr')}</button></div>`).join(''):'<p class="text-center text-slate-500 py-6">這個單字集還沒有卡片</p>'}</div></div>`;
 }
 
 /* ---------- 翻卡學習 ---------- */
 function startStudy(){
-  const q=D().cards.filter(c=>!HARD||c.s<2).map(c=>c.id);
-  if(!q.length)return toast(HARD?'沒有需要複習的卡片 🎉':'請先新增單字卡');
+  const q=pool(1).map(c=>c.id);
+  if(!q.length)return toast(HARD||STAR?'沒有符合條件的卡片':'請先新增單字卡');
   nav('study',{q,i:0,f:0});
 }
 function study(){
   const d=D(),c=cc();
+  const sb=`<button class="p-2 ${c.st?'text-amber-500':'text-slate-400'}" onclick="star('${c.id}',event)">${ic('st','w-6 h-6',c.st)}</button>`;
   return `<div class="p-4 flex flex-col gap-4">
-  <div class="flex items-center justify-between text-sm"><span>${V.i+1} / ${V.q.length}</span>
-    <span>🔊 發音 <select class="bg-transparent text-indigo-600 dark:text-indigo-400 font-semibold" onchange="D().lang=this.value;save()">${LO(d.lang)}</select></span></div>
+  <div class="flex items-center justify-between text-sm gap-2"><span>${V.i+1} / ${V.q.length}</span>${tools()}
+    <select class="bg-transparent text-indigo-600 dark:text-indigo-400 font-semibold" onchange="D().lang=this.value;save()">${LO(d.lang)}</select></div>
   <div class="h-1.5 rounded bg-slate-200 dark:bg-slate-700"><div class="h-full bg-indigo-500 rounded" style="width:${(V.i+1)/V.q.length*100}%"></div></div>
   <div class="sc" style="height:46dvh" ontouchstart="ts(event)" ontouchend="te(event)" onclick="flip()">
     <div class="ci h-full ${V.f?'f':''}" id="ci">
-      <div class="fc cd flex flex-col overflow-y-auto text-center !p-6"><div class="m-auto flex flex-col items-center gap-4 w-full">
-        <button class="text-3xl p-2" onclick="event.stopPropagation();say()">🔊</button>
-        <div class="t1 font-bold break-words max-w-full">${esc(c.f)}</div>
+      <div class="fc cd flex flex-col overflow-y-auto text-center !p-6"><div class="absolute top-2 right-2">${sb}</div><div class="m-auto flex flex-col items-center gap-4 w-full">
+        <button class="p-2" onclick="event.stopPropagation();say()">${ic('spk','w-8 h-8')}</button>
+        <div class="t1 font-bold break-words max-w-full">${hl(c.f)}</div>
         <div class="text-xs text-slate-400">點一下翻面，左右滑動切換</div></div></div>
-      <div class="fc bk cd flex flex-col overflow-y-auto text-center !p-6"><div class="m-auto flex flex-col items-center gap-4 w-full">
-        <button class="text-3xl p-2" onclick="event.stopPropagation();say()">🔊</button>
-        <div class="t2 font-semibold break-words max-w-full">${esc(c.b)}</div>
-        ${c.e?`<div class="t3 italic text-slate-500 dark:text-slate-400">${esc(c.e)}</div>`:''}</div></div>
+      <div class="fc bk cd flex flex-col overflow-y-auto text-center !p-6"><div class="absolute top-2 right-2">${sb}</div><div class="m-auto flex flex-col items-center gap-4 w-full">
+        <button class="p-2" onclick="event.stopPropagation();sayB()">${ic('spk','w-8 h-8')}</button>
+        <div class="t2 font-semibold break-words max-w-full">${hl(c.b)}</div>
+        ${c.e?`<div class="t3 italic text-slate-500 dark:text-slate-400">${hl(c.e)}</div>`:''}</div></div>
     </div>
   </div>
-  <div class="flex gap-3"><button class="btn bg2 flex-1 !py-4 text-lg" onclick="step(-1)">‹ 上一張</button><button class="btn bg2 flex-1 !py-4 text-lg" onclick="step(1)">下一張 ›</button></div>
+  <div class="flex gap-3"><button class="btn bg2 flex-1 !py-4 text-lg" onclick="step(-1)">${ic('lf','w-6 h-6')}上一張</button><button class="btn bg2 flex-1 !py-4 text-lg" onclick="step(1)">下一張${ic('rg','w-6 h-6')}</button></div>
   <div id="rt" class="grid grid-cols-3 gap-2 ${V.f?'':'invisible'}">
-    <button class="btn !bg-red-500 !px-1 leading-tight" onclick="rate(1)">😣 不熟<br><small>（重來）</small></button>
-    <button class="btn !bg-amber-500 !px-1" onclick="rate(2)">😐 普通</button>
-    <button class="btn !bg-emerald-600 !px-1" onclick="rate(3)">😎 已掌握</button></div></div>`;
+    <button class="btn !bg-red-500 !px-1 leading-tight flex-col !gap-0" onclick="rate(1)">不熟<small>（重來）</small></button>
+    <button class="btn !bg-amber-500 !px-1" onclick="rate(2)">普通</button>
+    <button class="btn !bg-emerald-600 !px-1" onclick="rate(3)">已掌握</button></div></div>`;
 }
 let tx=0;
 const ts=e=>{tx=e.touches[0].clientX};
 const te=e=>{const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>60){V.sw=Date.now();snd('tap');step(dx<0?1:-1)}};
-function flip(){if(Date.now()-(V.sw||0)<350)return;V.f=V.f?0:1;snd('flip');$('#ci').classList.toggle('f',!!V.f);$('#rt').classList.toggle('invisible',!V.f)}
-function step(n){const i=V.i+n;if(i<0)return;if(i>=V.q.length){toast('本輪學習完成 🎉');return nav('deck')}V.i=i;V.f=0;render()}
+function flip(){if(Date.now()-(V.sw||0)<350)return;V.f=V.f?0:1;snd('flip');{const a=V.f?P.ab:P.af;a?(V.f?sayB():say()):stopSp()}$('#ci').classList.toggle('f',!!V.f);$('#rt').classList.toggle('invisible',!V.f)}
+function step(n){const i=V.i+n;if(i<0)return;if(i>=V.q.length){toast('本輪學習完成');return nav('deck')}V.i=i;V.f=0;render()}
 function rate(s){const c=cc();c.s=s;if(s===3)snd('ok');if(s===1)V.q.push(c.id);save();step(1)}
 
 /* ---------- 選擇題測驗 ---------- */
 function startQuiz(){
-  const d=D();if(d.cards.length<2)return toast('至少需要 2 張卡片才能測驗');
-  nav('quiz',{l:shuf(d.cards.map(c=>c.id)),i:0,sc:0,pk:null,o:null});
+  const d=D(),pl=pool();if(d.cards.length<2||!pl.length)return toast(STAR&&!pl.length?'尚未標記星號單字':'至少需要 2 張卡片才能測驗');
+  nav('quiz',{l:shuf(pl.map(c=>c.id)),i:0,sc:0,pk:null,o:null});
 }
 function quiz(){
   const d=D();
-  if(V.i>=V.l.length)return `<div class="p-6 text-center space-y-4"><div class="text-6xl">${V.sc===V.l.length?'🏆':'🎉'}</div>
+  if(V.i>=V.l.length)return `<div class="p-6 text-center space-y-4"><div class="flex justify-center text-indigo-600">${ic('tro','w-16 h-16')}</div>
     <div class="text-2xl font-bold">答對 ${V.sc} / ${V.l.length} 題</div>
     <button class="btn w-full" onclick="startQuiz()">再測一次</button><button class="btn bg2 w-full" onclick="nav('deck')">返回單字集</button></div>`;
   const c=cc();
   if(!V.o)V.o=shuf([c.b,...shuf([...new Set(d.cards.filter(x=>x.b!==c.b).map(x=>x.b))]).slice(0,3)]);
   const done=V.pk!=null;
   return `<div class="p-4 space-y-3">
-  <div class="flex justify-between text-sm"><span>第 ${V.i+1} / ${V.l.length} 題</span><span>答對 ${V.sc} 題</span></div>
+  <div class="flex justify-between items-center text-sm gap-2"><span>第 ${V.i+1} / ${V.l.length} 題・答對 ${V.sc}</span>${tools(1)}</div>
   <div class="cd text-center !p-6"><div class="text-sm text-slate-500 mb-2">請選出正確的解釋</div>
-    <div class="text-3xl font-bold break-words">${esc(c.f)}</div><button class="mt-2 text-2xl p-2" onclick="say()">🔊</button></div>
+    <div class="text-3xl font-bold break-words">${hl(c.f)}</div><button class="mt-2 p-2" onclick="say()">${ic('spk','w-7 h-7')}</button></div>
   ${V.o.map((o,k)=>{let k2='bg2';if(done){if(o===c.b)k2='!bg-emerald-500 !text-white';else if(k===V.pk)k2='!bg-red-500 !text-white'}
-    return `<button class="btn ${k2} w-full text-left" onclick="pick(${k})">${esc(o)}</button>`}).join('')}
-  ${done?`<p class="text-center font-bold ${V.o[V.pk]===c.b?'text-emerald-600':'text-red-500'}">${V.o[V.pk]===c.b?'✅ 答對了！':'❌ 答錯了，正確答案：'+esc(c.b)}</p>
-    ${c.e?`<p class="text-center text-sm italic text-slate-500">${esc(c.e)}</p>`:''}
-    <button class="btn w-full" onclick="nq()">${V.i+1>=V.l.length?'查看成績':'下一題 ›'}</button>`:''}</div>`;
+    return `<button class="btn ${k2} w-full !justify-start text-left" onclick="pick(${k})">${hl(o)}</button>`}).join('')}
+  ${done?`<p class="text-center font-bold ${V.o[V.pk]===c.b?'text-emerald-600':'text-red-500'}">${V.o[V.pk]===c.b?ic('chk')+' 答對了':ic('x')+' 答錯了，正確答案：'+hl(c.b)}</p>
+    ${c.e?`<p class="text-center text-sm italic text-slate-500">${hl(c.e)}</p>`:''}
+    <button class="btn w-full" onclick="nq()">${V.i+1>=V.l.length?'查看成績':'下一題'}${ic('rg')}</button>`:''}</div>`;
 }
 function pick(k){if(V.pk!=null)return;const c=cc();V.pk=k;if(V.o[k]===c.b){V.sc++;c.s=Math.max(c.s,2);snd('ok')}else{c.s=1;snd('no')}save();render(1)}
 function nq(){V.i++;V.pk=null;V.o=null;render()}
+
+/* ---------- 星號、篩選、工具列 ---------- */
+const pool=h=>D().cards.filter(c=>(!h||!HARD||c.s<2)&&(!STAR||c.st));
+const tools=b=>`<span class="flex gap-1">${[['af','正面'],...(b?[]:[['ab','反面']])].map(([k,n])=>`<button class="px-2 py-1 rounded-lg text-xs flex items-center gap-1 ${P[k]?'bg-indigo-600 text-white':'bg2'}" onclick="tgl('${k}')">${ic('spk','w-4 h-4')}${n}</button>`).join('')}</span>`;
+function tgl(k){P[k]=P[k]?0:1;savep();render(1)}
+function star(id,e){if(e)e.stopPropagation();const c=D().cards.find(x=>x.id===id);c.st=!c.st;save();render(1)}
+function auto(){
+  const p=V.p;
+  if(p==='match'&&!V.fin)MT=setInterval(()=>{const e=$('#tm');if(e)e.textContent=((performance.now()-V.t0)/1000).toFixed(1)},100);
+  else if(p==='study'||(p==='quiz'&&V.pk==null&&V.i<V.l.length)||(p==='learn'&&V.ph==='mc'))P.af&&say();
+  else if(p==='spell'&&V.ph==='ask')say();
+  if(['ask','wr','fx'].includes(V.ph))setTimeout(()=>{const e=$('#ai');e&&e.focus()},80);
+}
+const norm=s=>pl(s).trim().toLowerCase().replace(/\s+/g,' ');
+const val=()=>$('#ai').value;
+const mko=c=>shuf([c.b,...shuf([...new Set(D().cards.filter(x=>x.b!==c.b).map(x=>x.b))]).slice(0,3)]);
+const inb=(f,t)=>`<input id="ai" class="inp" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="輸入單字" onkeydown="if(event.key==='Enter')${f}"><button class="btn w-full" onclick="${f}">${t}</button>`;
+function diff(m,a){
+  m=m.trim();let x='';
+  for(let i=0;i<m.length;i++)x+=`<span class="${m[i].toLowerCase()===(a[i]||'').toLowerCase()?'':'text-red-500 font-bold underline'}">${esc(m[i])}</span>`;
+  return `<div class="cd space-y-1 text-center"><div class="text-xs text-slate-500">你的答案（紅色為拼錯處）</div><div class="t1 break-all">${x||'（未作答）'}</div><div class="text-xs text-slate-500">正確拼法</div><div class="t1 text-emerald-600 break-all">${esc(a)}</div></div>`;
+}
+const done=(n,t)=>`<div class="p-6 text-center space-y-4"><div class="flex justify-center text-indigo-600">${ic('tro','w-16 h-16')}</div><div class="text-2xl font-bold">${t}</div><button class="btn w-full" onclick="${n}()">再來一次</button><button class="btn bg2 w-full" onclick="nav('deck')">返回單字集</button></div>`;
+
+/* ---------- 智慧學習（每輪 7 張：選擇題 → 拼寫題） ---------- */
+function startLearn(){
+  const d=D(),p=pool();if(d.cards.length<2||!p.length)return toast(STAR&&!p.length?'尚未標記星號單字':'至少需要 2 張卡片');
+  const ids=shuf(p).sort((a,b)=>a.s-b.s).slice(0,7).map(c=>c.id);
+  V={d:V.d,p:'learn',ids,L:Object.fromEntries(ids.map(i=>[i,{g:'mc',k:0,w:0}])),cid:null,ph:'mc',fk:null};lnext();
+}
+function lnext(){
+  const u=V.ids.filter(i=>V.L[i].k<2);
+  if(!u.length){V.ids.forEach(i=>{D().cards.find(c=>c.id===i).s=V.L[i].w?2:3});save();V.ph='rd';snd('ok');return render()}
+  const o=u.length>1?u.filter(i=>i!==V.cid):u;V.cid=o[Math.random()*o.length|0];
+  V.ph=V.L[V.cid].g;V.pk=null;V.o=V.ph==='mc'?mko(cc()):null;render();
+}
+function lres(ok,mine,t){const s=V.L[V.cid];if(ok){s.k++;if(s.g==='mc')s.g='wr';snd('ok')}else{s.k=0;s.w++;snd('no')}V.fk={ok,mine,t};V.ph='fb';render(1)}
+function lmc(k){if(V.ph!=='mc')return;V.pk=k;lres(V.o[k]===cc().b,'','mc')}
+function lwr(){const m=val();lres(norm(m)===norm(cc().f),m,'wr')}
+function lfx(){if(norm(val())===norm(cc().f)){snd('ok');lnext()}else{snd('no');toast('還不對，請再輸入一次')}}
+function learn(){
+  const n=V.ids.length,pg=V.ids.reduce((a,i)=>a+Math.min(V.L[i].k,2),0)/(2*n)*100;
+  if(V.ph==='rd')return done('startLearn','本輪完成');
+  const c=cc(),ph=V.ph,F=V.fk,mc=ph==='mc'||(ph==='fb'&&F.t==='mc');
+  let h=`<div class="p-4 space-y-3"><div class="flex justify-between items-center text-sm"><span>本輪剩餘 ${V.ids.filter(i=>V.L[i].k<2).length} / ${n} 張</span>${tools(1)}</div>
+  <div class="h-2 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden"><div class="h-full bg-emerald-500 transition-all" style="width:${pg}%"></div></div>
+  <div class="cd text-center !p-6 space-y-2">${mc?`<div class="text-sm text-slate-500">這個單字的意思是？</div><div class="t1 font-bold break-words">${hl(c.f)}</div>`:`<div class="text-sm text-slate-500">請拼出這個單字</div><div class="t2 font-semibold break-words">${hl(c.b)}</div>`}<button class="p-2" onclick="say()">${ic('spk','w-7 h-7')}</button></div>`;
+  if(mc)h+=V.o.map((o,k)=>{let k2='bg2';if(ph==='fb'){if(o===c.b)k2='!bg-emerald-500 !text-white';else if(k===V.pk)k2='!bg-red-500 !text-white'}return `<button class="btn ${k2} w-full !justify-start text-left" onclick="lmc(${k})">${hl(o)}</button>`}).join('');
+  if(ph==='wr')h+=inb('lwr()','送出');
+  if(ph==='fb')h+=F.ok?`<p class="text-center font-bold text-emerald-600">${ic('chk')} 答對了</p><button class="btn w-full" onclick="lnext()">繼續</button>`
+    :(F.t==='wr'?diff(F.mine,pl(c.f)):`<p class="text-center font-bold text-red-500">${ic('x')} 答錯了，正確答案：${hl(c.b)}</p>`)+`<button class="btn w-full" onclick="V.ph='fx';render()">重新輸入正確單字</button>`;
+  if(ph==='fx')h+=`<div class="cd text-center"><div class="text-xs text-slate-500">正確單字</div><div class="t1 text-emerald-600 break-all">${hl(c.f)}</div></div>${inb('lfx()','確認')}`;
+  return h+'</div>';
+}
+
+/* ---------- 拼寫與聽寫 ---------- */
+function startSpell(){const p=pool();if(!p.length)return toast(STAR?'尚未標記星號單字':'請先新增單字卡');nav('spell',{q:shuf(p.map(c=>c.id)),i:0,sc:0,ph:'ask',fk:null})}
+function lsp(sk){const c=cc(),m=sk?'':val(),ok=!sk&&norm(m)===norm(c.f);if(ok){V.sc++;c.s=Math.max(c.s,2)}else c.s=1;snd(ok?'ok':'no');V.fk={ok,mine:m};V.ph='fb';save();render(1)}
+function snx(){V.i++;V.ph='ask';render()}
+function spell(){
+  if(V.i>=V.q.length)return done('startSpell',`答對 ${V.sc} / ${V.q.length} 題`);
+  const c=cc(),dc=P.sm==='dict',F=V.fk;let b;
+  if(V.ph==='ask')b=inb('lsp()','確認')+`<button class="btn bg2 w-full" onclick="lsp(1)">不會，顯示答案</button>`;
+  else b=(F.ok?`<p class="text-center font-bold text-emerald-600">${ic('chk')} 答對了</p><div class="cd text-center t1 text-emerald-600">${hl(c.f)}</div>`:diff(F.mine,pl(c.f))+(dc?`<div class="cd text-center"><div class="text-xs text-slate-500">解釋</div><div class="t2">${hl(c.b)}</div></div>`:''))+`<button class="btn w-full" onclick="snx()">${V.i+1>=V.q.length?'查看成績':'下一題'}${ic('rg')}</button>`;
+  return `<div class="p-4 space-y-3"><div class="flex justify-between items-center text-sm"><span>${V.i+1} / ${V.q.length}</span>${tools(1)}</div>
+  <div class="grid grid-cols-2 gap-2 text-sm">${[['cn','看中文拼單字','edit'],['dict','純聽寫','hp']].map(([k,n,i])=>`<button class="btn ${P.sm===k?'':'bg2'} !py-2" onclick="P.sm='${k}';savep();render()">${ic(i,'w-4 h-4')}${n}</button>`).join('')}</div>
+  <div class="cd text-center !p-6 space-y-2">${dc?'<div class="text-sm text-slate-500">聽發音，拼出單字</div>':`<div class="t2 font-semibold break-words">${hl(c.b)}</div>`}<button class="p-2" onclick="say()">${ic('spk','w-8 h-8')}</button></div>${b}</div>`;
+}
+
+/* ---------- 配對消除遊戲 ---------- */
+function startMatch(){
+  const p=pool();if(p.length<2)return toast(STAR?'星號單字至少需要 2 張':'至少需要 2 張卡片');
+  const cs=shuf(p).slice(0,6);
+  nav('match',{t:shuf(cs.flatMap(c=>[{id:c.id,t:'f'},{id:c.id,t:'b'}])),sel:null,gone:0,tot:cs.length,t0:performance.now(),fin:0,nb:0});
+}
+function match(){
+  const d=D();
+  if(V.fin)return `<div class="p-6 text-center space-y-4"><div class="flex justify-center text-indigo-600">${ic('tro','w-16 h-16')}</div><div class="text-4xl font-bold tabular-nums">${V.fin.toFixed(1)} 秒</div><p class="text-slate-500">${V.nb?'新的最佳紀錄':'最佳紀錄 '+d.best.toFixed(1)+' 秒'}</p><button class="btn w-full" onclick="startMatch()">再玩一次</button><button class="btn bg2 w-full" onclick="nav('deck')">返回單字集</button></div>`;
+  return `<div class="p-4 space-y-3"><div class="flex justify-between items-center"><span class="flex items-center gap-1 text-lg font-bold tabular-nums">${ic('tm')}<span id="tm">0.0</span> 秒</span>${d.best?`<span class="text-sm text-slate-500">最佳 ${d.best.toFixed(1)} 秒</span>`:''}</div>
+  <div class="grid grid-cols-3 gap-2">${V.t.map((x,i)=>{const c=d.cards.find(y=>y.id===x.id);return `<button id="m${i}" class="cd !p-2 h-24 flex items-center justify-center text-center text-sm font-medium break-words overflow-hidden border-2 border-transparent transition" onclick="mt(${i})"><span class="line-clamp-4">${hl(x.t==='f'?c.f:c.b)}</span></button>`}).join('')}</div></div>`;
+}
+function mt(i){
+  const el=$('#m'+i);if(!el||el.classList.contains('gn'))return;
+  if(V.sel===null){V.sel=i;el.classList.add('!border-indigo-500');return}
+  if(V.sel===i){el.classList.remove('!border-indigo-500');V.sel=null;return}
+  const a=$('#m'+V.sel),A=V.t[V.sel],B=V.t[i];V.sel=null;
+  if(A.id===B.id&&A.t!==B.t){
+    [a,el].forEach(e=>{e.classList.remove('!border-indigo-500');e.classList.add('gn')});snd('ok');
+    if(++V.gone===V.tot){V.fin=(performance.now()-V.t0)/1000;clearInterval(MT);const d=D();V.nb=!d.best||V.fin<d.best;if(V.nb)d.best=+V.fin.toFixed(1);save();setTimeout(()=>render(1),350)}
+  }else{
+    [a,el].forEach(e=>{e.classList.remove('!border-indigo-500');e.classList.add('!border-red-500','sh')});snd('no');
+    setTimeout(()=>[a,el].forEach(e=>e.classList.remove('!border-red-500','sh')),400);
+  }
+}
 
 /* ---------- 彈出視窗 ---------- */
 function modal(h){const m=$('#md');m.innerHTML=`<div class="bg-white dark:bg-slate-900 w-full rounded-t-3xl p-5 space-y-3 max-h-[88dvh] overflow-y-auto" style="padding-bottom:calc(env(safe-area-inset-bottom) + 1.25rem)" onclick="event.stopPropagation()">${h}</div>`;m.classList.remove('hidden')}
@@ -275,10 +394,15 @@ function settings(){
   <div class="grid grid-cols-3 gap-2">${['標準','加大','特大'].map((n,i)=>`<button class="btn ${P.fs===i?'':'bg2'}" onclick="setFs(${i})">${n}</button>`).join('')}</div></div>
   <label class="flex items-center justify-between py-1"><span>操作音效</span>
   <input type="checkbox" class="w-6 h-6 accent-indigo-600" ${P.snd?'checked':''} onchange="P.snd=this.checked?1:0;savep();snd('ok')"></label>
+  <label class="flex items-center justify-between py-1"><span>自動播放正面語音</span>
+  <input type="checkbox" class="w-6 h-6 accent-indigo-600" ${P.af?'checked':''} onchange="P.af=this.checked?1:0;savep()"></label>
+  <label class="flex items-center justify-between py-1"><span>翻面時自動播放反面語音</span>
+  <input type="checkbox" class="w-6 h-6 accent-indigo-600" ${P.ab?'checked':''} onchange="P.ab=this.checked?1:0;savep()"></label>
+  <label class="block text-sm text-slate-500">反面語音語言<select class="inp mt-1" onchange="P.bl=this.value;savep()">${LO(P.bl)}</select></label>
   <div class="cd !bg-slate-100 dark:!bg-slate-800 space-y-2"><div class="text-sm text-slate-500">離線快取</div><p id="cs" class="text-sm">檢查中…</p>
   <div class="grid grid-cols-2 gap-2 text-sm"><button class="btn bg2" onclick="checkCache()">檢查快取狀態</button><button class="btn" onclick="forceUpdate()">強制更新版本</button></div></div>
-  <button class="btn bg2 w-full" onclick="exportJ()">📤 匯出備份（JSON）</button>
-  <label class="btn bg2 w-full block text-center">📥 匯入還原（JSON）<input type="file" accept=".json,application/json" class="hidden" onchange="importJ(this)"></label>
+  <button class="btn bg2 w-full" onclick="exportJ()">${ic('up')} 匯出備份（JSON）</button>
+  <label class="btn bg2 w-full block text-center">${ic('dn')} 匯入還原（JSON）<input type="file" accept=".json,application/json" class="hidden" onchange="importJ(this)"></label>
   <p class="text-xs text-slate-500">資料只儲存在這支手機的瀏覽器中；清除 Safari 網站資料或移除主畫面 App 可能造成資料遺失，建議定期匯出備份。</p>
   <button class="btn w-full" onclick="closeM()">完成</button>`);
   checkCache();
@@ -286,13 +410,13 @@ function settings(){
 async function sw(m){const r=await navigator.serviceWorker.ready;return new Promise(ok=>{const ch=new MessageChannel();ch.port1.onmessage=e=>ok(e.data);r.active.postMessage(m,[ch.port2])})}
 async function checkCache(){
   const el=$('#cs');if(!el)return;
-  if(!('serviceWorker' in navigator))return void(el.textContent='⚠️ 此瀏覽器不支援離線快取');
+  if(!('serviceWorker' in navigator))return void(el.textContent='此瀏覽器不支援離線快取');
   el.textContent='檢查中…';
   try{
     const r=await Promise.race([sw({type:'STATUS'}),new Promise((_,j)=>setTimeout(j,3000))]);
     const ok=r.urls.some(u=>/index\.html$/.test(u))&&r.urls.some(u=>u.includes('tailwindcss'));
-    el.textContent=ok?`✅ 離線快取就緒（${r.n} 個檔案・${r.ver}）`:'⚠️ 快取尚未完成，請連網後按「強制更新版本」';
-  }catch{el.textContent='⚠️ 離線服務尚未啟用，請連網後重新開啟 App'}
+    el.textContent=ok?`離線快取就緒（${r.n} 個檔案・${r.ver}）`:'快取尚未完成，請連網後按「強制更新版本」';
+  }catch{el.textContent='離線服務尚未啟用，請連網後重新開啟 App'}
 }
 async function forceUpdate(){
   if(!navigator.onLine)return toast('目前沒有網路，無法更新');
@@ -317,8 +441,8 @@ function importJ(i){
   r.onload=()=>{try{
     const j=JSON.parse(r.result);if(!Array.isArray(j.decks))throw 0;
     if(!confirm('還原將覆蓋目前所有資料，確定要繼續嗎？'))return;
-    S={decks:j.decks.map(d=>({id:d.id||uid(),name:String(d.name||'未命名單字集'),lang:LANGS[d.lang]?d.lang:'en-US',
-      cards:(Array.isArray(d.cards)?d.cards:[]).map(c=>({id:c.id||uid(),f:String(c.f??''),b:String(c.b??''),e:String(c.e??''),s:[0,1,2,3].includes(c.s)?c.s:0}))}))};
+    S={decks:j.decks.map(d=>({id:d.id||uid(),name:String(d.name||'未命名單字集'),best:+d.best||0,lang:LANGS[d.lang]?d.lang:'en-US',
+      cards:(Array.isArray(d.cards)?d.cards:[]).map(c=>({id:c.id||uid(),f:String(c.f??''),b:String(c.b??''),e:String(c.e??''),s:[0,1,2,3].includes(c.s)?c.s:0,st:!!c.st}))}))};
     save();closeM();nav('home');toast('還原完成');
   }catch{toast('檔案格式不正確')}};
   r.readAsText(f);i.value='';
@@ -341,6 +465,7 @@ addEventListener('touchend',unlock,{passive:true});addEventListener('click',unlo
 document.addEventListener('click',e=>{const b=e.target.closest('button,[onclick]');if(b&&!b.classList.contains('sc')&&!b.matches('#md,#md>div'))snd('tap')},true);
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
+$('#bk').innerHTML=ic('lf','w-6 h-6')+'<span>返回</span>';$('#ra').innerHTML=ic('cog','w-6 h-6');
 render();
 </script>
 </body>

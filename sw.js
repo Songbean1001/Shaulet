@@ -1,7 +1,7 @@
 /* Shaulet Service Worker
  * 更新 index.html 後，可在 App「設定 → 強制更新版本」一鍵刷新離線快取。
- * 若想讓所有裝置強制換新快取，把下方 VER 的數字加一即可。 */
-const VER = 'shaulet-v2';
+ * 若想讓所有裝置強制換新快取，把下方 CACHE_NAME 的數字加一即可。 */
+const CACHE_NAME = 'shaulet-v3';
 const SCOPE = self.registration.scope;
 const IDX = new URL('index.html', SCOPE).href;
 const MAN = new URL('manifest.json', SCOPE).href;
@@ -24,12 +24,12 @@ async function fill(c) {
 }
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VER).then(fill).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE_NAME).then(fill).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k !== VER) await caches.delete(k);
+    for (const k of await caches.keys()) if (k !== CACHE_NAME) await caches.delete(k);
     await self.clients.claim();
   })());
 });
@@ -43,7 +43,7 @@ self.addEventListener('fetch', e => {
   if (!nav && !same && !CDN.includes(q.url)) return;
   const key = nav ? IDX : q.url;
   e.respondWith((async () => {
-    const c = await caches.open(VER);
+    const c = await caches.open(CACHE_NAME);
     const hit = await c.match(key, { ignoreSearch: true });
     const net = (same ? fetch(key, { cache: 'reload' }) : fetch(new Request(key, { mode: 'no-cors' })))
       .then(r => { if (r.ok || r.type === 'opaque') c.put(key, r.clone()); return r; })
@@ -58,12 +58,12 @@ self.addEventListener('message', e => {
   const p = e.ports[0], t = e.data && e.data.type;
   if (!p) return;
   e.waitUntil((async () => {
-    const c = await caches.open(VER);
+    const c = await caches.open(CACHE_NAME);
     if (t === 'STATUS') {
       const ks = await c.keys();
-      p.postMessage({ ver: VER, n: ks.length, urls: ks.map(k => k.url) });
+      p.postMessage({ ver: CACHE_NAME, n: ks.length, urls: ks.map(k => k.url) });
     } else if (t === 'REFRESH') {
-      try { await fill(c); p.postMessage({ ok: 1, ver: VER }); }
+      try { await fill(c); p.postMessage({ ok: 1, ver: CACHE_NAME }); }
       catch (err) { p.postMessage({ ok: 0, err: String(err) }); }
     }
   })());
