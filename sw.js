@@ -1,7 +1,7 @@
 /* Shaulet Service Worker
  * 更新 index.html 後，可在 App「設定 → 強制更新版本」一鍵刷新離線快取。
  * 若想讓所有裝置強制換新快取，把下方 CACHE_NAME 的數字加一即可。 */
-const CACHE_NAME = 'shaulet-v3';
+const CACHE_NAME = 'shaulet-v4';
 const SCOPE = self.registration.scope;
 const IDX = new URL('index.html', SCOPE).href;
 const MAN = new URL('manifest.json', SCOPE).href;
